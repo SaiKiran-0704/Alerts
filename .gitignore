@@ -1,0 +1,9 @@
+<<<<<<< HEAD
+__pycache__/
+*.pyc
+.env
+=======
+__pycache__/
+*.pyc
+.env
+>>>>>>> f52d046 (Added PORT binding for Render deployment)
