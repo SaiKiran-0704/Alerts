@@ -90,33 +90,9 @@ def analyze_alerts(alerts):
 # ----------------------------
 @app.route("/", methods=["GET"])
 def home():
-    customer_param = request.args.get("customer")
-    timeframe = request.args.get("timeframe")  # "24h", "7d", "30d"
-
-    # If nothing is selected, show empty page with only form
-    if not customer_param or not timeframe:
-        return html_page.replace("{html_table}", "<p>Please select a customer and timeframe.</p>")
-
-    customer_num = int(customer_param)
-    customer = CUSTOMERS[customer_num]
-
-    # Timeframe mapping
-    now = int(time.time())
-
-    if timeframe == "24h":
-        start_ts = now - 24*3600
-    elif timeframe == "7d":
-        start_ts = now - 7*24*3600
-    else:
-        start_ts = now - 30*24*3600
-
-    alerts = fetch_all_alerts_for_account(
-        customer["api_key"], 
-        customer["account_id"], 
-        start_ts=start_ts,
-        end_ts=now
-    )
-
+    customer_num = int(request.args.get("customer", 1))
+    customer = CUSTOMERS.get(customer_num, list(CUSTOMERS.values())[0])
+    alerts = fetch_all_alerts_for_account(customer["api_key"], customer["account_id"])
     html_table = analyze_alerts(alerts)
     html_page = f"""
     <html>
@@ -126,29 +102,13 @@ def home():
         </head>
         <body style="padding: 20px;">
             <h1>Alerts for {customer['name']}</h1>
-            <form method="get" class="mb-3">
-
-                <!-- Customer dropdown -->
-                <label class="form-label">Select Customer:</label>
-                <select name="customer" class="form-select" required>
-                    <option value="">-- Select a customer --</option>
-                    {''.join([f'<option value="{k}" {"selected" if str(k)==request.args.get("customer") else ""}>{v["name"]}</option>' for k,v in CUSTOMERS.items()])}
+            <form method="get">
+                <label>Select Customer:</label>
+                <select name="customer">
+                    {''.join([f'<option value="{k}" {"selected" if k==customer_num else ""}>{v["name"]}</option>' for k,v in CUSTOMERS.items()])}
                 </select>
-
-                <br>
-
-                <!-- Timeframe dropdown -->
-                <label class="form-label">Select Time Frame:</label>
-                <select name="timeframe" class="form-select" required>
-                    <option value="">-- Select timeframe --</option>
-                    <option value="24h" {"selected" if request.args.get("timeframe")=="24h" else ""}>Last 24 hours</option>
-                    <option value="7d" {"selected" if request.args.get("timeframe")=="7d" else ""}>Last 7 days</option>
-                    <option value="30d" {"selected" if request.args.get("timeframe")=="30d" else ""}>Last 30 days</option>
-                </select>
-                <br>
-                <button class="btn btn-primary" type="submit">Submit</button>
+                <button type="submit">View Alerts</button>
             </form>
-
             <hr/>
             {html_table}
         </body>
